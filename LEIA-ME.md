@@ -50,23 +50,34 @@ Extras: "Tenho um evento agora" (fluxo rápido) e "Avaliar meu look"
 
 ## O que falta para IA real
 
-1. **Análise visual real**: conectar um modelo de visão computacional
-   (ex.: API de análise de imagem) no lugar de `analisarFoto()`.
-2. **Geração de looks por IA generativa**: substituir/complementar
-   `generateLooks()` por chamadas a um modelo de linguagem com prompt
-   estruturado, mantendo o mesmo formato de retorno (`LookSuggestion`).
-3. **"Vista em mim" realista**: integrar uma API de geração/edição de
-   imagem (ex.: modelos de try-on virtual) — o componente
-   `src/app/experimentar/[id]/page.tsx` já está isolado e pronto para
-   receber essa chamada no lugar da simulação.
-4. **Avaliação de look por visão computacional real** no lugar de
-   `avaliarLook()`.
-5. **Backend/Supabase**: as tabelas sugeridas (`profiles`, `looks`,
+1. ~~**Análise visual real**~~
+2. ~~**Geração de looks por IA generativa**~~
+3. **"Vista em mim" realista — já com o código pronto, falta só a chave.**
+   A rota `src/app/api/try-on/route.ts` já integra com a [fal.ai](https://fal.ai)
+   (gera uma imagem de referência da peça a partir da descrição do look e
+   depois aplica sobre a foto da pessoa). Para ativar:
+   1. Crie uma conta em fal.ai e gere uma chave em **Dashboard → Keys**
+   2. No Vercel: **Project Settings → Environment Variables** → adicione
+      `FAL_KEY` com o valor da chave → **Save**
+   3. Faça um novo deploy (Vercel → Deployments → ⋯ → Redeploy)
+   4. Pronto: a tela "Experimentar em mim" passa a mostrar o botão
+      "Gerar minha foto com esse look" automaticamente. Sem a chave
+      configurada, o app continua funcionando normalmente com a
+      simulação estilizada (fallback automático, sem quebrar nada).
+   Custo aproximado: alguns centavos de dólar por foto gerada (a fal.ai
+   cobra por uso, sem mensalidade). Para trocar de provedor, basta editar
+   as duas chamadas dentro dessa mesma rota.
+4. **Análise visual real** (subtom, contraste, formato do rosto): pode
+   usar o mesmo padrão de rota de servidor acima, plugando um modelo de
+   visão computacional no lugar de `analisarFoto()`.
+5. **Avaliação de look por visão computacional real** no lugar de
+   `avaliarLook()` — mesmo padrão.
+6. **Backend/Supabase**: as tabelas sugeridas (`profiles`, `looks`,
    `saved_looks`, `wardrobe_items`, `style_preferences`) ainda não foram
    criadas — hoje tudo vive no localStorage. Migrar é trocar o
    `src/lib/store.tsx` (que centraliza todo o estado) por chamadas ao
    Supabase, mantendo a mesma interface (`useApp()`) usada pelas telas.
-6. **Previsão do tempo automática por localização**: hoje o clima é
+7. **Previsão do tempo automática por localização**: hoje o clima é
    escolhido manualmente pelo usuário na tela de Estilo.
-7. **PWA**: o projeto está em Next.js/App Router, pronto para receber
+8. **PWA**: o projeto está em Next.js/App Router, pronto para receber
    manifest + service worker quando for a hora de publicar.
