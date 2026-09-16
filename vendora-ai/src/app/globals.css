@@ -1,0 +1,116 @@
+@import "tailwindcss";
+
+/* Inter Variable — licenca SIL Open Font License 1.1, uso comercial
+   permitido. Auto-hospedada: nenhuma requisicao a servidor de terceiros,
+   o que tambem evita vazar o IP do visitante para a fonte. */
+@import "@fontsource-variable/inter";
+
+:root {
+  /* Identidade Vendora AI */
+  --marinho: #101b35;
+  --marinho-suave: #1b2947;
+  --violeta: #6554e8;
+  --violeta-escuro: #5344c9;
+  --violeta-claro: #eeecfd;
+  --verde: #159b6c;
+  --verde-texto: #0e7350;
+  --verde-claro: #e4f5ee;
+
+  /* Superficies e texto */
+  --fundo: #f6f8fc;
+  --superficie: #ffffff;
+  --superficie-suave: #fbfcfe;
+  --texto: #17213a;
+  --texto-suave: #5a6785;
+  --borda: #dfe4ee;
+  --borda-forte: #c6cede;
+
+  /* Estados. Tons escolhidos para passar contraste AA sobre o fundo claro
+     correspondente — tag de status precisa ser lida, nao so colorida. */
+  --ambar-texto: #8a5300;
+  --ambar-claro: #fdf3e3;
+  --vermelho-texto: #a32b1f;
+  --vermelho-claro: #fbeae8;
+  --cinza-texto: #4e5a75;
+  --cinza-claro: #eef1f7;
+
+  color-scheme: light;
+}
+
+@theme inline {
+  --color-marinho: var(--marinho);
+  --color-marinho-suave: var(--marinho-suave);
+  --color-violeta: var(--violeta);
+  --color-violeta-escuro: var(--violeta-escuro);
+  --color-violeta-claro: var(--violeta-claro);
+  --color-verde: var(--verde);
+  --color-verde-texto: var(--verde-texto);
+  --color-verde-claro: var(--verde-claro);
+  --color-fundo: var(--fundo);
+  --color-superficie: var(--superficie);
+  --color-superficie-suave: var(--superficie-suave);
+  --color-texto: var(--texto);
+  --color-texto-suave: var(--texto-suave);
+  --color-borda: var(--borda);
+  --color-borda-forte: var(--borda-forte);
+  --color-ambar-texto: var(--ambar-texto);
+  --color-ambar-claro: var(--ambar-claro);
+  --color-vermelho-texto: var(--vermelho-texto);
+  --color-vermelho-claro: var(--vermelho-claro);
+  --color-cinza-texto: var(--cinza-texto);
+  --color-cinza-claro: var(--cinza-claro);
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+
+html {
+  background: var(--fundo);
+}
+
+body {
+  background: var(--fundo);
+  color: var(--texto);
+  font-family: var(--font-sans);
+  font-feature-settings: "cv11", "ss01";
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Foco visivel e consistente em todo elemento interativo. Nunca removido:
+   sem ele a navegacao por teclado fica impossivel de acompanhar. */
+:focus-visible {
+  outline: 2px solid var(--violeta);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Tabular numbers em qualquer numero de dinheiro, para as colunas
+   alinharem na vertical e a leitura de valores nao dancar. */
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Pular para o conteudo — primeiro tab de qualquer pagina. */
+.pular-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+}
+.pular-link:focus {
+  left: 8px;
+  top: 8px;
+  padding: 10px 16px;
+  background: var(--superficie);
+  border: 1px solid var(--violeta);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
