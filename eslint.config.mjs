@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Vendora AI e uma aplicacao autonoma com o proprio ESLint e o proprio
+    // build. Sem esta linha o lint do Seu Estilo tentaria analisar codigo de
+    // outro app, com outras dependencias.
+    "vendora-ai/**",
   ]),
 ]);
 
