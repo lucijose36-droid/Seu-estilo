@@ -11,9 +11,30 @@ set -uo pipefail
 BANCO="${1:-vendora_teste}"
 AQUI="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Conferencia de conectividade ANTES de qualquer asserção.
+#
+# Sem isto, um banco fora do ar faz os testes NEGATIVOS passarem falsamente:
+# `espera_erro` so observa que o comando falhou, e "psql nao conectou" tambem
+# e uma falha. O resultado seria um relatorio verde afirmando que barreiras de
+# seguranca funcionam, sem nunca ter tocado no banco. Falhar alto aqui e a
+# unica forma honesta.
+if ! pg_isready -q; then
+  echo "ERRO: PostgreSQL nao esta aceitando conexoes." >&2
+  echo "      Os testes negativos passariam falsamente, entao a execucao para aqui." >&2
+  exit 2
+fi
+
+if ! psql -q -t -A -d postgres -c "select 1" >/dev/null 2>&1; then
+  echo "ERRO: nao foi possivel conectar ao PostgreSQL como o usuario atual." >&2
+  exit 2
+fi
+
 # O teste recria o banco do zero a cada execucao. Sem isso ele so passaria na
 # primeira rodada — e um teste que depende da propria historia nao prova nada.
-"$AQUI/aplicar.sh" "$BANCO" >/dev/null
+if ! "$AQUI/aplicar.sh" "$BANCO" >/dev/null; then
+  echo "ERRO: as migrations nao aplicaram. Nada foi verificado." >&2
+  exit 2
+fi
 
 PASSOU=0
 FALHOU=0

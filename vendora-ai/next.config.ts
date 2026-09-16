@@ -7,9 +7,12 @@ const nextConfig: NextConfig = {
   // e declarado aqui explicitamente quando isso acontecer.
   images: { remotePatterns: [] },
 
-  // A Vendora AI vive numa subpasta de um repositorio que tem outro app com
-  // o proprio lockfile. Sem fixar a raiz, o Turbopack sobe um nivel, escolhe
-  // o lockfile do Seu Estilo e passa a resolver modulos a partir de la.
+  // Fixa a raiz do Turbopack neste diretorio.
+  //
+  // Sem isso, o Turbopack sobe niveis procurando lockfile e pode eleger raiz
+  // errada quando o projeto esta dentro de outra arvore (foi o caso enquanto
+  // a Vendora AI vivia numa subpasta do repositorio do Seu Estilo). Manter
+  // explicito e barato e elimina a classe de bug inteira.
   turbopack: { root: path.resolve(import.meta.dirname) },
 };
 
