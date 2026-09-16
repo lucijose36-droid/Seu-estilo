@@ -286,6 +286,46 @@ espera_erro "segunda organização para o mesmo usuário é recusada" \
   "$DONO_A" "select public.criar_organizacao('Outra org');"
 
 echo
+echo "Ciclo de vida da comissão"
+echo "─────────────────────────"
+
+espera_ok "comissão confirmada entra com a data de confirmação" \
+  "$DONO_A" "insert into commission_records
+    (org_id, plataforma, external_transaction_id, valor_centavos, status,
+     source_type, data_evento, confirmado_at)
+    values ('$ORG_A','Plataforma Exemplo','TX-9001', 15000, 'confirmed',
+            'importacao_csv', current_date, now());"
+
+espera_ok "reembolso registra um EVENTO e muda o status" \
+  "$DONO_A" "insert into commission_events (org_id, commission_id, tipo, valor_centavos)
+             select '$ORG_A', id, 'revertida', valor_centavos
+             from commission_records where external_transaction_id = 'TX-9001';
+             update commission_records set status = 'reversed'
+             where external_transaction_id = 'TX-9001';"
+
+espera_valor "a comissão revertida SAI do total de confirmadas" \
+  "$DONO_A" "0" "select coalesce(sum(valor_centavos),0) from commission_records
+                 where status = 'confirmed' and external_transaction_id = 'TX-9001';"
+
+espera_valor "mas o histórico do que foi confirmado antes permanece" \
+  "$DONO_A" "1" "select count(*) from commission_events e
+                 join commission_records c on c.id = e.commission_id
+                 where c.external_transaction_id = 'TX-9001'
+                   and e.tipo = 'revertida';"
+
+espera_valor "'unknown' não entra em confirmada nem em recebida" \
+  "$DONO_A" "0" "select count(*) from commission_records
+                 where status in ('confirmed','received')
+                   and source_reference = 'linha-desconhecida';"
+
+espera_ok "situação desconhecida é um estado válido e explícito" \
+  "$DONO_A" "insert into commission_records
+    (org_id, plataforma, valor_centavos, status, source_type, data_evento,
+     source_reference)
+    values ('$ORG_A','Plataforma Exemplo', 5000, 'unknown', 'importacao_csv',
+            current_date, 'linha-desconhecida');"
+
+echo
 echo "Visitante anônimo: só alcança a superfície pública"
 echo "──────────────────────────────────────────────────"
 
