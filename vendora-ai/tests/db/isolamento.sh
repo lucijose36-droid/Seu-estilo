@@ -25,6 +25,35 @@ como() {
     -c "select set_config('request.jwt.claim.sub', '$sub', false); set role authenticated; $*" 2>&1
 }
 
+# Executa como visitante anonimo: papel `anon`, sem claim de usuario. E
+# exatamente o que o Supabase faz para quem chega com a chave publica.
+como_anon() {
+  psql -v ON_ERROR_STOP=1 -q -t -A -d "$BANCO" \
+    -c "select set_config('request.jwt.claim.sub', '', false); set role anon; $*" 2>&1
+}
+
+espera_anon_valor() {
+  local desc="$1" esperado="$2"; shift 2
+  local saida
+  saida=$(como_anon "$@" | tail -1)
+  if [[ "$saida" == "$esperado" ]]; then
+    ok "$desc"
+  else
+    falha "$desc" "esperado '$esperado', obtido '$saida'"
+  fi
+}
+
+espera_anon_erro() {
+  local desc="$1"; shift
+  local saida
+  saida=$(como_anon "$@")
+  if [[ $? -ne 0 ]]; then
+    ok "$desc"
+  else
+    falha "$desc" "o comando foi ACEITO, quando deveria ter sido barrado"
+  fi
+}
+
 # Executa como superusuario (preparacao de cenario, fora do alcance da RLS).
 admin_sql() {
   psql -v ON_ERROR_STOP=1 -q -t -A -d "$BANCO" -c "$*" 2>&1
@@ -255,6 +284,73 @@ espera_erro "consentimento marcado sem finalidade e data é recusado" \
 
 espera_erro "segunda organização para o mesmo usuário é recusada" \
   "$DONO_A" "select public.criar_organizacao('Outra org');"
+
+echo
+echo "Visitante anônimo: só alcança a superfície pública"
+echo "──────────────────────────────────────────────────"
+
+espera_anon_erro "anônimo NÃO lê a tabela de produtos direto" \
+  "select * from affiliate_products;"
+
+espera_anon_erro "anônimo NÃO lê comissões" \
+  "select * from commission_records;"
+
+espera_anon_erro "anônimo NÃO lê a lista de membros" \
+  "select * from memberships;"
+
+espera_anon_erro "anônimo NÃO cria organização" \
+  "select public.criar_organizacao('Invasora');"
+
+espera_anon_valor "anônimo enxerga a oferta ativa pela função pública" "1" \
+  "select count(*) from public.obter_oferta_publica('curso-a');"
+
+espera_anon_valor "a função pública NÃO devolve o link de afiliado nem a comissão" "0" \
+  "select count(*) from information_schema.columns
+   where table_name = 'obter_oferta_publica'
+     and column_name in ('affiliate_url','comissao_estimada_centavos',
+                         'fonte_verificacao','regras_divulgacao');"
+
+# Produto inativo nao pode aparecer na pagina publica.
+admin_sql "insert into affiliate_products
+  (org_id, titulo, slug, plataforma, affiliate_url)
+  values ('$ORG_A','Rascunho','curso-rascunho','Plataforma Exemplo',
+          'https://exemplo.test/rascunho')" >/dev/null
+
+espera_anon_valor "produto inativo NÃO aparece na página pública" "0" \
+  "select count(*) from public.obter_oferta_publica('curso-rascunho');"
+
+# Note como o id vem de obter_oferta_publica(), nao de um SELECT na tabela:
+# e assim que o visitante real chega ao id, porque a tabela ele nao le.
+espera_anon_valor "clique em produto inativo não devolve destino" "" \
+  "select coalesce((select destino from public.registrar_clique_saida(
+     (select id from public.obter_oferta_publica('curso-rascunho')),
+     'sessao-anonima-1','trk-inativo')), '');"
+
+espera_anon_valor "clique em produto ativo devolve o destino GRAVADO" \
+  "https://exemplo.test/curso-a" \
+  "select destino from public.registrar_clique_saida(
+     (select id from public.obter_oferta_publica('curso-a')),
+     'sessao-anonima-2','trk-0001');"
+
+# Quem confere o registro e o dono da organizacao, pela RLS normal — o
+# visitante anonimo nao tem, e nao deve ter, leitura da tabela de cliques.
+espera_valor "o clique do visitante ficou registrado para o dono" \
+  "$DONO_A" "1" "select count(*) from outbound_clicks where tracking_id = 'trk-0001';"
+
+espera_anon_valor "repetir o mesmo tracking_id ainda devolve o destino" \
+  "https://exemplo.test/curso-a" \
+  "select destino from public.registrar_clique_saida(
+     (select id from public.obter_oferta_publica('curso-a')),
+     'sessao-anonima-2','trk-0001');"
+
+espera_valor "mas NÃO cria um segundo registro de clique" \
+  "$DONO_A" "1" "select count(*) from outbound_clicks where tracking_id = 'trk-0001';"
+
+espera_erro "duas organizações NÃO podem usar o mesmo slug público" \
+  "$DONO_B" "insert into affiliate_products
+    (org_id, titulo, slug, plataforma, affiliate_url)
+    values ('$ORG_B','Colisão','curso-a','Plataforma Exemplo',
+            'https://exemplo.test/colisao');"
 
 echo
 echo "─────────────────────────────────────────"
