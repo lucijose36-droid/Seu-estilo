@@ -1,23 +1,29 @@
 import type { Metadata } from "next";
-import { Bot } from "lucide-react";
-import Cartao from "@/components/ui/Cartao";
-import EstadoVazio from "@/components/ui/EstadoVazio";
+import Aviso from "@/components/ui/Aviso";
+import { supabaseConfigurado } from "@/lib/supabase/config";
+import Simulador from "./Simulador";
 
 export const metadata: Metadata = { title: "Vendedor" };
 
-export default function Pagina() {
+export default function Vendedor() {
   return (
     <div className="mx-auto max-w-5xl space-y-5">
-      <Cartao preenchimento={false}>
-        <EstadoVazio
-          icone={<Bot size={20} aria-hidden="true" />}
-          titulo="Simulador ainda não configurado"
-          descricao="Aqui você conversa com o atendente automatizado e vê, ao lado, quais afirmações verificadas ele consultou e o que o validador aprovou ou reprovou."
-        />
-      </Cartao>
-      <p className="px-1 text-[12.5px] leading-relaxed text-texto-suave">
-        Etapa 5 traz o motor por regras, o validador e o encaminhamento para atendimento humano. Sem custo por token nesta fase.
-      </p>
+      <Aviso tom="info" titulo="Como este atendente funciona">
+        Ele não redige informação sobre o produto: escolhe entre afirmações já
+        verificadas e mensagens que você configurou. O texto final é montado
+        pelo servidor a partir do banco, e um validador confere cada resposta
+        antes de ela sair. Inventar preço não é algo que ele evita — é algo que
+        o formato não permite expressar.
+      </Aviso>
+
+      {!supabaseConfigurado ? (
+        <Aviso tom="atencao" titulo="Banco não configurado">
+          O simulador precisa dos produtos e afirmações cadastrados para
+          funcionar.
+        </Aviso>
+      ) : (
+        <Simulador />
+      )}
     </div>
   );
 }
